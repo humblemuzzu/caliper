@@ -240,7 +240,8 @@ function fit(args: Args): string {
 
 function describeBands(args: Args): string {
   const img = load(positionalPath(args, 0, "png"));
-  const found = bands(img, bandOptions(args, img));
+  const options = bandOptions(args, img);
+  const found = bands(img, options);
   if (found.length === 0) return "no bands — try --threshold or --invert";
   const lines = ["  #      top   bottom   height    gap    x range", "  ──────────────────────────────────────────────"];
   for (const [i, band] of found.entries()) {
@@ -251,7 +252,7 @@ function describeBands(args: Args): string {
         `  ${String(band.height).padStart(7)}  ${gap.padStart(5)}    ${band.xStart}..${band.xEnd}`,
     );
   }
-  lines.push("", `  ${found.length} bands · ink width ${inkWidth(img, bandOptions(args, img))}px`);
+  lines.push("", `  ${found.length} bands · ink width ${inkWidth(img, options)}px`);
   return lines.join("\n");
 }
 

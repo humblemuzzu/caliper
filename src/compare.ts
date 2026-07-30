@@ -1,6 +1,6 @@
 import type { Band } from "./measure.ts";
 
-export interface CompareOptions {
+interface CompareOptions {
   labels?: [string, string];
   /**
    * Index of the band both lists are zeroed on. The default anchors on the
@@ -94,7 +94,8 @@ export function compare(ref: Band[], mine: Band[], opts: CompareOptions = {}): s
   const summary =
     paired === 0
       ? "no bands in common"
-      : `${within}/${paired} within ${tolerance}px · worst ${signed(worst)}px at row ${worstRow}`;
+      : `${within}/${paired} within ${tolerance}px · worst ${signed(worst)}px` +
+        (worstRow < 0 ? "" : ` at row ${worstRow}`);
   const counts =
     ref.length === mine.length
       ? ""
@@ -103,7 +104,7 @@ export function compare(ref: Band[], mine: Band[], opts: CompareOptions = {}): s
   return `${tabulate(header, rows)}\n\n${summary}${counts}`;
 }
 
-export interface ClassifyOptions {
+interface ClassifyOptions {
   /** Relative spread below which the samples are the same number. 0.02 is 2%. */
   tolerance?: number;
   /**

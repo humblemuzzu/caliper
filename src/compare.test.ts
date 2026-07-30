@@ -17,7 +17,9 @@ describe("compare", () => {
     const mine = [band(300, 24), band(360, 16), band(420, 40)];
     const table = compare(ref, mine);
     expect(table).toContain("3/3 within 3px");
+    // No row is named when nothing is out: there is no worst row to name.
     expect(table).toContain("worst 0px");
+    expect(table).not.toContain("row -1");
   });
 
   test("reports the delta of each band and the worst of them", () => {
