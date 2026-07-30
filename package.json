@@ -1,0 +1,31 @@
+{
+  "name": "caliper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Measure screenshots numerically and never exceed Claude's vision budget by accident.",
+  "scripts": {
+    "budget": "bun run src/cli.ts budget",
+    "fit": "bun run src/cli.ts fit",
+    "capture": "bun run src/cli.ts capture",
+    "bands": "bun run src/cli.ts bands",
+    "caps": "bun run src/cli.ts caps",
+    "edges": "bun run src/cli.ts edges",
+    "color": "bun run src/cli.ts color",
+    "field": "bun run src/cli.ts field",
+    "coverage": "bun run src/cli.ts coverage",
+    "compare": "bun run src/cli.ts compare",
+    "sanity": "bun run scripts/sanity.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "dependencies": {
+    "playwright": "^1.62.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "@types/pngjs": "^6.0.5",
+    "typescript": "^5.9.0"
+  }
+}
