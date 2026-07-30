@@ -5,7 +5,7 @@ import {
   MAX_BASE64_BYTES,
   MAX_EDGE_ABSOLUTE,
   paddedSize,
-  PATCH,
+
   planView,
   resizedSize,
   snapToPatch,
@@ -167,8 +167,22 @@ describe("padding (§5)", () => {
     expect(countImageTokens(924, 1288)).toBeLessThanOrEqual(TIERS.standard.maxTokens);
   });
 
-  test("snapToPatch never returns a zero edge", () => {
-    expect(snapToPatch(20, 20)).toEqual(size(PATCH, PATCH));
+  test("snapToPatch leaves a sub-patch axis alone rather than enlarging it", () => {
+    // Clamping up to PATCH would be an enlargement, and `downscale` refuses to
+    // enlarge — so the old clamp made `fit --snap` fail outright on a 1×N image.
+    expect(snapToPatch(20, 20)).toEqual(size(20, 20));
+    expect(snapToPatch(1, 1568)).toEqual(size(1, 1568));
+    expect(snapToPatch(27, 56)).toEqual(size(27, 56));
+    // and it never returns zero
+    expect(snapToPatch(1, 1).width).toBeGreaterThan(0);
+  });
+
+  test("snapToPatch never enlarges either axis", () => {
+    for (let w = 1; w <= 200; w++) {
+      const snapped = snapToPatch(w, w);
+      expect(snapped.width).toBeLessThanOrEqual(w);
+      expect(snapped.height).toBeLessThanOrEqual(w);
+    }
   });
 });
 

@@ -93,12 +93,13 @@ function writeView(rawPath: string, base: string, plan: ViewPlan): ShotReport["v
     save(crop(img, box), path);
     return path;
   });
-  const first = plan.slices[0];
-  const perSlice = first ? countImageTokens(first.width, first.height) : 0;
+  // Summed per slice rather than multiplied by the first one's cost: `tile`
+  // happens to emit equal-height slices today, but nothing in the type says so.
+  const total = plan.slices.reduce((sum, s) => sum + countImageTokens(s.width, s.height), 0);
   return {
     kind: "slice",
     paths,
-    tokens: perSlice * plan.slices.length,
+    tokens: total,
     note: `${paths.length} slices — ${plan.reason}`,
   };
 }

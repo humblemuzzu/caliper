@@ -85,11 +85,18 @@ function integers(args: Args, name: string): number[] | undefined {
   });
 }
 
+/**
+ * A pixel dimension. Rejects zero, negatives and fractions, because every one of
+ * them produces confident nonsense downstream rather than an error: `budget -5
+ * 100` printed "0 tokens, plan: AS-IS" before this guard existed.
+ */
 function positionalNumber(args: Args, index: number, name: string): number {
   const raw = args.positional[index];
   if (raw === undefined) throw new Error(`missing <${name}>`);
   const value = Number(raw);
-  if (!Number.isFinite(value)) throw new Error(`<${name}> needs a number, got "${raw}"`);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`<${name}> needs a whole number of pixels above zero, got "${raw}"`);
+  }
   return value;
 }
 

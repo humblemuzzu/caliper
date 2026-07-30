@@ -132,13 +132,18 @@ interface CardSpec {
 }
 
 /**
- * A card on a page, both of which may be the same colour.
+ * A card whose fill is the SAME colour as the page it sits on, divided only by a
+ * hairline border.
  *
- * This exists to prove a specific failure is handled: with fill and page both
- * #fafafa and a #e9e9e9 border, the card is separated from the page by three
- * levels out of 255. No ink threshold can find that edge — the test asserts
- * `bands` finds nothing — while `edges`, which looks for a local minimum rather
- * than an absolute level, finds both borders exactly.
+ * This fixture exists to prove a failure mode. Fill and page are both #fafafa,
+ * so no ink threshold can separate them — there is no cutoff that puts the card
+ * on one side and the page on the other, because they are the same value. The
+ * #e9e9e9 border is 17 luma levels darker (233 against 250), which is far below
+ * any threshold tuned for text. `edges` finds it because a local minimum asks a
+ * different question: darker than both neighbours, regardless of absolute level.
+ *
+ * The test asserts both halves of that: threshold detection MUST fail here, and
+ * `edges` MUST succeed.
  */
 export function card(spec: CardSpec): Image {
   const c = canvas(spec.width, spec.height, spec.page);

@@ -74,9 +74,10 @@ export function bands(img: Image, opts: BandsOptions): Band[] {
   let xStart = Number.POSITIVE_INFINITY;
   let xEnd = Number.NEGATIVE_INFINITY;
 
+  // Only ever called while a run is open, so `top` is always a real row here.
   const flush = (bottom: number) => {
     const height = bottom - top + 1;
-    if (top >= 0 && height >= minHeight) {
+    if (height >= minHeight) {
       found.push({ top, bottom, height, xStart, xEnd });
     }
     top = -1;
@@ -175,19 +176,6 @@ interface EdgesOptions {
 }
 
 /**
- * Positions along one row or column that are darker than both neighbourhoods
- * by at least `depth`.
- *
- * This finds borders that no threshold can: a #fafafa card on a #fafafa page,
- * separated by a #e9e9e9 hairline, differs from its surroundings by three
- * levels out of 255. Absolute level says "all background"; a local minimum says
- * "there is an edge exactly here".
- *
- * A border several pixels wide produces several qualifying positions. They are
- * collapsed to the run's centre, because three numbers for one border is not a
- * measurement anybody can use.
- */
-/**
  * The row or column of grey values to scan. Taking exactly one of row/col is
  * enforced here rather than in the type, because the alternative — a
  * discriminated union — reads worse at every call site than `{ row: 420 }`.
@@ -206,6 +194,23 @@ function lineValues(img: Image, row: number | undefined, col: number | undefined
   throw new Error("edges needs exactly one of row or col");
 }
 
+/**
+ * Positions along one row or column that are darker than both neighbourhoods
+ * by at least `depth`.
+ *
+ * This finds borders that no threshold can. A #fafafa card on a #fafafa page
+ * separated by a #e9e9e9 hairline has IDENTICAL background on both sides, so no
+ * absolute cutoff can sit between them — every pixel reads as background. The
+ * hairline itself is only 17 levels darker (Rec.709 luma 233 against 250), far
+ * too shallow for a threshold tuned to find ink. A local minimum ignores the
+ * absolute level entirely and asks only "is this darker than both sides", which
+ * is the question that has an answer here. Hence the `depth` default of 1.5:
+ * enough to reject sensor/compression noise, low enough to catch a hairline.
+ *
+ * A border several pixels wide produces several qualifying positions. They are
+ * collapsed to the run's centre, because three numbers for one border is not a
+ * measurement anybody can use.
+ */
 export function edges(img: Image, opts: EdgesOptions): number[] {
   const { depth = 1.5, window = 3, range } = opts;
   const values = lineValues(img, opts.row, opts.col);
@@ -487,6 +492,12 @@ export function coverage(
   }
   const closed = morph(morph(lit, box.width, box.height, dilate, true), box.width, box.height, erode, false);
 
+  // Fewer rows than bands would make `bandHeight` zero, and every band except
+  // the last would silently report 0 coverage regardless of what is in the box.
+  // A wrong number that looks plausible is worse than an error.
+  if (bandCount > box.height) {
+    throw new Error(`coverage: ${bandCount} bands asked of a ${box.height}px box`);
+  }
   const bandHeight = Math.floor(box.height / bandCount);
   const out: { band: number; coverage: number }[] = [];
   for (let band = 0; band < bandCount; band += 1) {

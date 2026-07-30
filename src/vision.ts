@@ -123,12 +123,20 @@ export function paddedSize(width: number, height: number): Size {
  * Round DOWN to a multiple of 28. §5: an image whose dimensions are already
  * multiples of 28 incurs no padding and no wasted tokens. Rounding down rather
  * than up guarantees the result still fits whatever budget the input fit.
+ *
+ * An axis under one patch is LEFT ALONE rather than clamped up to 28. Clamping
+ * up is an enlargement, which contradicts everything above: it can push an
+ * image back over a budget it already fit, and `downscale` — correctly — refuses
+ * to enlarge, so a 1×N input made `fit --snap` exit non-zero with no output.
+ * There is nothing to save on an axis that costs one patch either way.
  */
 export function snapToPatch(width: number, height: number): Size {
-  return {
-    width: Math.max(PATCH, Math.floor(width / PATCH) * PATCH),
-    height: Math.max(PATCH, Math.floor(height / PATCH) * PATCH),
-  };
+  return { width: snapAxis(width), height: snapAxis(height) };
+}
+
+function snapAxis(pixels: number): number {
+  const snapped = Math.floor(pixels / PATCH) * PATCH;
+  return snapped >= PATCH ? snapped : pixels;
 }
 
 /** §7: base64 encodes 3 bytes as 4 characters, so a payload is ~1.37× the file. */
@@ -178,7 +186,14 @@ function maxSliceHeight(width: number, tier: Tier): number {
 }
 
 function tile(width: number, height: number, sliceHeight: number, overlap: number): Box[] {
-  const step = Math.max(1, sliceHeight - overlap);
+  // An overlap at or above the slice height means consecutive slices advance by
+  // almost nothing: at `overlap = 2000` on a 784px slice the step collapsed to 1
+  // and a 7698px page produced over 1,800 near-identical crops. Caller error, so
+  // it throws rather than quietly producing a useless plan.
+  if (overlap < 0 || overlap >= sliceHeight) {
+    throw new Error(`overlap must be between 0 and ${sliceHeight - 1}px for a ${sliceHeight}px slice, got ${overlap}`);
+  }
+  const step = sliceHeight - overlap;
   const boxes: Box[] = [];
   for (let y = 0; y < height; y += step) {
     // Bottom-align the final slice instead of emitting a sliver: a 30px tall

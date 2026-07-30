@@ -41,8 +41,34 @@ Use these as test vectors. They are the ground truth.
 | 1000×1000 (1 MP) | Not resized | 1296 | Not resized | 1296 |
 | 1092×1092 (1.19 MP) | Not resized | 1521 | Not resized | 1521 |
 | 1920×1080 (2.07 MP) | 1456×819 | 1560 | Not resized | 2691 |
-| 2000×1500 (3 MP) | 1269×952 | 1564 | Not resized | 3888 |
+| 2000×1500 (3 MP) | 1269×952 — **see §3a** | 1564 | Not resized | 3888 |
 | 3840×2160 (8.29 MP) | 1456×819 | 1560 | 2576×1449 | 4784 |
+
+## 3a. Where the docs contradict themselves (adjudicated 2026-07-30)
+
+Two errors exist in the published docs. Both were found independently by two
+separate implementations and then confirmed by running the docs' own Python from
+§6 verbatim. **§6, the executable reference, wins in both cases** — §4 explicitly
+instructs the reader to compute sizes with it rather than by hand.
+
+**(1) `2000×1500`.** §3's table says `1269×952`. Running §6 gives **`1270×952`**.
+
+This is the single half-way tie in the published set: `1270 / (2000/1500)` is
+exactly `952.5`. Python's `round()` is half-to-even and yields `952`, so `1270`
+fits and the binary search keeps it. A port using half-up rounding yields `953`,
+which does not fit, so the search settles one pixel lower on `1269`. **The table's
+value is therefore what an incorrect port produces.**
+
+Operationally it changes nothing — `1270×952` and `1269×952` both cost 1564
+visual tokens, which is what §3's own token column reports. Implementations should
+follow §6 and produce `1270×952`, and should pin this case in a test so that a
+future refactor to half-up rounding fails loudly.
+
+**(2) The high-resolution square ceiling in §10 below.** An earlier version of
+this file stated `2044×2044`. That is impossible: `2044 = 73×28`, and `73² = 5329`
+tokens against a 4784 budget. The correct figure is **`1932×1932`** (`69×28`,
+4761 tokens), confirmed by `resized_size(4000, 4000, 2576, 4784)`. Corrected in
+§10. Derive ceilings from the formula; do not hardcode them.
 
 ## 4. The resize rule
 
@@ -215,8 +241,12 @@ becomes a 6 MB payload.
 
 | shape | standard tier | high-res tier |
 | ----- | ------------- | ------------- |
-| square | 1092×1092 | 2044×2044 |
-| 16:9 | 1456×819 | 2576×1449 |
+| square | 1092×1092 (39×28, 1521 tok) | 1932×1932 (69×28, 4761 tok) |
+| 16:9 | 1456×819 (1560 tok) | 2576×1449 (4784 tok) |
+
+All four verified against `resized_size`. Note the high-res square ceiling is set
+by the TOKEN budget, not the 2576px edge — see §3a(2) for the arithmetic and for a
+wrong value to watch out for.
 
 **Pre-resizing to exactly `resized_size(...)` means the API resizes nothing**,
 which avoids a second resampling pass. Two resamplings of text are visibly worse

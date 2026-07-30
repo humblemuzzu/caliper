@@ -43,8 +43,11 @@ function pngsIn(dir: string): string[] {
       .filter((name) => name.toLowerCase().endsWith(".png"))
       .sort()
       .map((name) => join(dir, name));
-  } catch {
-    return [];
+  } catch (err) {
+    // A missing directory is expected — these paths differ per machine. Anything
+    // else (permissions, an I/O fault) is a real problem and must not look empty.
+    if ((err as { code?: string }).code === "ENOENT") return [];
+    throw err;
   }
 }
 
