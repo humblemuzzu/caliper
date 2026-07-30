@@ -119,6 +119,39 @@ describe("countImageTokens (§1)", () => {
   });
 });
 
+/**
+ * §10's "practical ceilings" table lists 2044×2044 as the largest unresized
+ * square on the high-res tier. It cannot be: 2044 pads to 73 patches, and
+ * 73 × 73 = 5329 tokens against a 4784 budget. The true ceiling is 1932×1932
+ * at 4761 tokens, which the reference implementation agrees with.
+ *
+ * The standard-tier figure in the same table, 1092×1092, is correct.
+ */
+describe("the practical ceilings (§10)", () => {
+  test("1092×1092 is the largest unresized square on the standard tier", () => {
+    expect(resizedSize(1092, 1092)).toEqual(size(1092, 1092));
+    expect(countImageTokens(1092, 1092)).toBe(1521);
+    expect(countImageTokens(1120, 1120)).toBeGreaterThan(TIERS.standard.maxTokens);
+  });
+
+  test("1456×819 is the largest unresized 16:9 frame on the standard tier", () => {
+    expect(resizedSize(1456, 819)).toEqual(size(1456, 819));
+    expect(countImageTokens(1456, 819)).toBe(1560);
+  });
+
+  test("the high-res square ceiling is 1932, not the 2044 §10 prints", () => {
+    expect(countImageTokens(2044, 2044)).toBe(5329);
+    expect(countImageTokens(2044, 2044)).toBeGreaterThan(TIERS.highRes.maxTokens);
+    expect(resizedSize(2044, 2044, TIERS.highRes)).toEqual(size(1932, 1932));
+    expect(countImageTokens(1932, 1932)).toBe(4761);
+  });
+
+  test("2576×1449 is the largest unresized 16:9 frame on the high-res tier", () => {
+    expect(resizedSize(2576, 1449, TIERS.highRes)).toEqual(size(2576, 1449));
+    expect(countImageTokens(2576, 1449)).toBe(4784);
+  });
+});
+
 describe("padding (§5)", () => {
   test("924×1307 pads to 924×1316", () => {
     expect(paddedSize(924, 1307)).toEqual(size(924, 1316));
