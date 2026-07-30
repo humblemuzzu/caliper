@@ -141,7 +141,7 @@ export type ViewPlan =
   | { kind: "downscale"; to: Size; scale: number; tokens: number }
   | { kind: "slice"; slices: Box[]; scaleIfForced: number; reason: string };
 
-export interface ViewOptions {
+interface ViewOptions {
   tier?: Tier;
   /**
    * Legibility floor in pixels, read as: "do not take a full-budget capture

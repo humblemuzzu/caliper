@@ -10,7 +10,7 @@ import { countImageTokens, planView, type Tier, TIERS, type ViewPlan } from "./v
  * that will be silently degraded when it is looked at.
  */
 
-export interface CaptureOptions {
+interface CaptureOptions {
   url: string;
   /** id of the element to shoot. The element is shot, not a page-level clip. */
   sectionId: string;
@@ -27,7 +27,7 @@ export interface CaptureOptions {
   children?: string[];
 }
 
-export interface ChildOffset {
+interface ChildOffset {
   selector: string;
   top: number;
   left: number;
@@ -35,7 +35,7 @@ export interface ChildOffset {
   height: number;
 }
 
-export interface ShotReport {
+interface ShotReport {
   width: number;
   raw: { path: string; width: number; height: number; tokens: number };
   view: { kind: ViewPlan["kind"]; paths: string[]; tokens: number; note: string };
@@ -45,7 +45,7 @@ export interface ShotReport {
   children: ChildOffset[];
 }
 
-export interface CaptureReport {
+interface CaptureReport {
   url: string;
   sectionId: string;
   shots: ShotReport[];
@@ -203,7 +203,8 @@ export function formatReport(report: CaptureReport): string {
         `    ${child.selector}: top ${child.top} left ${child.left} ${child.width}×${child.height}`,
       );
     }
-    for (const path of shot.view.paths) lines.push(`    wrote ${path}`);
+    lines.push(`    raw  ${shot.raw.path}`);
+    for (const path of shot.view.paths) lines.push(`    view ${path}`);
   }
   return lines.join("\n");
 }

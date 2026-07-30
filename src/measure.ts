@@ -48,7 +48,7 @@ export interface Band {
   xEnd: number;
 }
 
-export interface BandsOptions {
+interface BandsOptions {
   box: Box;
   /** Grey level at or below which a pixel is ink. 170 separates text from a light UI background. */
   threshold?: number;
@@ -104,7 +104,7 @@ export function bands(img: Image, opts: BandsOptions): Band[] {
   return found;
 }
 
-export interface CapsOptions {
+interface CapsOptions {
   box: Box;
   threshold?: number;
   /**
@@ -132,7 +132,7 @@ export function caps(img: Image, opts: CapsOptions): { capHeight: number; fontSi
   return { capHeight, fontSize: capHeight / capRatio };
 }
 
-export interface InkWidthOptions {
+interface InkWidthOptions {
   box: Box;
   threshold?: number;
   invert?: boolean;
@@ -161,7 +161,7 @@ export function inkWidth(img: Image, opts: InkWidthOptions): number {
   return first < 0 ? 0 : last - first + 1;
 }
 
-export interface EdgesOptions {
+interface EdgesOptions {
   /** Scan across this row. Exactly one of row/col must be given. */
   row?: number;
   /** Scan down this column. */
@@ -245,11 +245,11 @@ export function edges(img: Image, opts: EdgesOptions): number[] {
   return centres;
 }
 
-export interface ModalOptions {
+interface ModalOptions {
   box: Box;
 }
 
-export interface ModalColour {
+interface ModalColour {
   hex: string;
   hsv: { h: number; s: number; v: number };
   matched: number;
@@ -320,7 +320,7 @@ export function modal(img: Image, opts: ModalOptions): ModalColour {
   };
 }
 
-export interface FieldOptions {
+interface FieldOptions {
   box: Box;
   /** Window side length. 12px is about one halftone cell at the pitches used in print-styled UI. */
   cell?: number;
@@ -447,7 +447,7 @@ function morph(mask: Uint8Array, width: number, height: number, radius: number, 
   return out;
 }
 
-export interface CoverageOptions {
+interface CoverageOptions {
   box: Box;
   /** Number of horizontal bands to split the box into. */
   bands?: number;

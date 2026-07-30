@@ -72,7 +72,7 @@ function finish(c: Canvas): Image {
   return { width: c.width, height: c.height, rgb: c.rgb, gray };
 }
 
-export interface DotFieldSpec {
+interface DotFieldSpec {
   width: number;
   height: number;
   pitch: number;
@@ -95,7 +95,7 @@ export function dotField(spec: DotFieldSpec): Image {
   return finish(c);
 }
 
-export interface BandSpec {
+interface BandSpec {
   y: number;
   h: number;
   /** Horizontal extent, so one fixture serves bands, caps and inkWidth. */
@@ -103,7 +103,7 @@ export interface BandSpec {
   w?: number;
 }
 
-export interface BandStackSpec {
+interface BandStackSpec {
   width: number;
   height: number;
   bands: BandSpec[];
@@ -120,7 +120,7 @@ export function bandStack(spec: BandStackSpec): Image {
   return finish(c);
 }
 
-export interface CardSpec {
+interface CardSpec {
   width: number;
   height: number;
   x: number;
@@ -187,7 +187,7 @@ export function halftoneRamp(spec: HalftoneRampSpec): Image {
   return finish(c);
 }
 
-export interface TiltedPillSpec {
+interface TiltedPillSpec {
   width: number;
   height: number;
   cx: number;
@@ -235,7 +235,7 @@ export function tiltedPill(spec: TiltedPillSpec): Image {
   return finish(c);
 }
 
-export interface GradientSpec {
+interface GradientSpec {
   width: number;
   height: number;
   from: string;
