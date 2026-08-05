@@ -14,6 +14,24 @@ import type { Size } from "./vision.ts";
  * Upscaling throws rather than returning something. Enlarging a measurement
  * source invents pixels that were never captured; every caller that has asked
  * for it has been wrong about which image was the reference.
+ *
+ * FLOATING-POINT BOUNDS. `(dx + 1) * xRatio` is not exactly `img.width` at the
+ * last column — for many integer size pairs it overshoots by ~1e-15, so
+ * `Math.ceil` gives `img.width + 1` and the inner loop reads one past the
+ * buffer. A `Uint8Array` out-of-bounds read is `undefined`, `undefined * weight`
+ * is `NaN`, and assigning `NaN` back into a `Uint8Array` silently stores 0 — a
+ * BLACK pixel, with no error raised anywhere.
+ *
+ * Measured before this clamp: 21×21 → 19×19 blackened the entire bottom row,
+ * and 2880×1800 → 1389×868 (a real MacBook Pro Retina resolution, and what
+ * `resizedSize` returns for it) blackened the bottom-right pixel. 1920×1080 and
+ * 3840×2160 came out clean, which is why it went unnoticed: the existing tests
+ * assert conserved MEAN and output dimensions, and three wrong bytes out of 3.6
+ * million move the mean by 0.00002.
+ *
+ * This matters more here than it looks. A silently black pixel at the extreme
+ * edge is exactly the kind of thing `edges()` and `bands()` read as ink, so a
+ * measurement taken from a downscaled view could be wrong with no visible cause.
  */
 export function downscale(img: Image, to: Size): Image {
   if (to.width > img.width || to.height > img.height) {
@@ -33,16 +51,19 @@ export function downscale(img: Image, to: Size): Image {
   for (let dy = 0; dy < to.height; dy += 1) {
     const yStart = dy * yRatio;
     const yEnd = (dy + 1) * yRatio;
+    // Clamped to the buffer, not merely ceil'd — see the note above.
+    const yLimit = Math.min(Math.ceil(yEnd), img.height);
     for (let dx = 0; dx < to.width; dx += 1) {
       const xStart = dx * xRatio;
       const xEnd = (dx + 1) * xRatio;
+      const xLimit = Math.min(Math.ceil(xEnd), img.width);
       let r = 0;
       let g = 0;
       let b = 0;
       let total = 0;
-      for (let sy = Math.floor(yStart); sy < Math.ceil(yEnd); sy += 1) {
+      for (let sy = Math.floor(yStart); sy < yLimit; sy += 1) {
         const yWeight = Math.min(sy + 1, yEnd) - Math.max(sy, yStart);
-        for (let sx = Math.floor(xStart); sx < Math.ceil(xEnd); sx += 1) {
+        for (let sx = Math.floor(xStart); sx < xLimit; sx += 1) {
           const weight = yWeight * (Math.min(sx + 1, xEnd) - Math.max(sx, xStart));
           const at = (sy * img.width + sx) * 3;
           r += (img.rgb[at] as number) * weight;

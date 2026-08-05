@@ -64,3 +64,54 @@ describe("downscale", () => {
     expect(fitted.gray.length).toBe(1170 * 1036);
   });
 });
+
+/**
+ * Regression: a floating-point overshoot in the loop bounds read one pixel past
+ * the source buffer. An out-of-bounds `Uint8Array` read is `undefined`,
+ * `undefined * weight` is `NaN`, and storing `NaN` into a `Uint8Array` silently
+ * writes 0 — a black pixel with no error raised.
+ *
+ * These assert EXACT pixel values on purpose. Every test above passed while the
+ * bug was live, because they all check an aggregate (conserved mean, output
+ * dimensions, buffer length) and three black bytes out of 3.6 million barely
+ * register. A tool whose job is measuring pixels needs at least one test that
+ * looks at pixels.
+ */
+describe("downscale — no out-of-bounds read at the far edge", () => {
+  const flat = (width: number, height: number, value: number) =>
+    gradient({
+      width,
+      height,
+      from: `#${value.toString(16).padStart(2, "0").repeat(3)}`,
+      to: `#${value.toString(16).padStart(2, "0").repeat(3)}`,
+    });
+
+  // Averaging a constant must return that constant, everywhere. Any deviation
+  // is arithmetic touching something outside the image.
+  const cases: Array<[number, number, number, number]> = [
+    [21, 21, 19, 19], // blackened the whole bottom row
+    [2880, 1800, 1389, 868], // MacBook Pro Retina — blackened the corner pixel
+    [1920, 1080, 1456, 819], // clean before the fix, kept as a control
+    [1568, 1388, 1170, 1036], // the 75% case from real work
+    [100, 100, 99, 99], // near-identity: worst case for ratio precision
+  ];
+
+  for (const [sw, sh, tw, th] of cases) {
+    test(`${sw}×${sh} → ${tw}×${th} produces no stray pixel`, () => {
+      const out = downscale(flat(sw, sh, 0xc8), { width: tw, height: th });
+      expect(out.rgb.reduce((n, v) => (v === 0xc8 ? n : n + 1), 0)).toBe(0);
+      expect(out.gray.reduce((n, v) => (v === 0xc8 ? n : n + 1), 0)).toBe(0);
+    });
+  }
+
+  test("a sweep of target sizes finds no stray pixel", () => {
+    const source = flat(97, 61, 0x89);
+    for (let tw = 1; tw <= 97; tw += 1) {
+      for (let th = 1; th <= 61; th += 7) {
+        const out = downscale(source, { width: tw, height: th });
+        const strays = out.rgb.reduce((n, v) => (v === 0x89 ? n : n + 1), 0);
+        expect({ tw, th, strays }).toEqual({ tw, th, strays: 0 });
+      }
+    }
+  });
+});
