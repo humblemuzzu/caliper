@@ -114,6 +114,17 @@ src/cli.ts         argument parsing and formatting only
 scripts/sanity.ts  runs the budget maths over real screenshots on this machine
 ```
 
+## Agent skill
+
+`skills/design-port` is the agent skill that uses this tool. It is the
+screenshot-to-code loop: measure the reference, classify systemic vs local,
+build, capture, measure the render the same way, iterate to 1–3px.
+
+```
+skills/design-port/SKILL.md     the loop, the image budget, the failure rules
+skills/design-port/MEASURE.md   every caliper invocation with real output
+```
+
 ## Development
 
 ```
